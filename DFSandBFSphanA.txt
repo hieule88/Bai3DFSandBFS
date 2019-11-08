@@ -1,0 +1,177 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<conio.h>
+#include<string.h>
+
+char A[5758][6]; // danh sach dinh
+int check[5757],B[5757][5757],D[5757][5757],dem=0,V; // 
+int f,r,N,Q[5760],dist[5757]; // hang doi BFS
+
+// tao dinh
+void rfile(){
+	// them ky tu "." vao cuoi file txt de dang xu ly file
+	char *ef=".";
+	int i=0;
+	FILE *fp;
+	fp = fopen("sgb-words.txt","r");
+	do{
+		fscanf(fp, "%s", A[i]);
+		i++;
+	}while(strcmp(A[i-1],ef) != 0 ) ;
+	V= i-1;
+	fclose(fp);
+}
+
+//tao canh G
+
+void taocanhG(){
+	int i,j,t,khac=0;
+	for(i=0;i<V;i++){
+		for(j=0;j<V;j++){
+			B[i][j]=0;
+		}
+	}
+	for(i=0;i<V;i++){
+		for(j=i+1;j<V;j++){
+			for(t=0;t<5;t++){
+				if(A[j][t]!=A[i][t]){
+					khac++;
+				}
+			}
+			if(khac ==1){
+				B[i][j] = 1;
+				B[j][i] = 1;
+			}
+			khac=0;
+		}
+	}
+}
+void explore(int u){
+	int i;
+	check[u] =1;
+	for (i=0; i<V;i++){
+		if(B[u][i]==1 && check[i]==0){
+			explore(i);
+		}
+	}
+}
+
+void DFS(){
+	int i;
+	for(i=0;i<V;i++){
+		check[i] =0;
+	}
+	for(i=0;i<V;i++){
+		if (check[i] == 0){
+			dem++;
+			explore(i);
+		}
+	}
+}
+
+void InitQueue(){
+	int i;
+	f=0;
+	r=0;
+	N=5760;
+	for(i=0;i<5760;i++){
+		Q[i]=-1;
+	}		
+}
+
+int IsEmpty(){
+	return(f==r);
+}
+
+int GetSize(){
+	return (N-(f-r))%N;	
+}
+
+void EnQueue(int u){
+	if(GetSize()== N-1){
+		printf("Overflow");
+	}
+	else{
+		Q[r] = u;
+		r= (r+1)%N;
+	}
+}
+
+int DeQueue(){
+	int tmp;
+	if(GetSize()==0){
+		return;
+	}
+	else{
+		tmp=Q[f];
+		f=(f+1)%N;
+		return tmp;
+	}
+}
+
+void BFS(int u){
+	int i,fath,son;
+	for(i=0;i<V;i++){
+		dist[i] = -1 ;
+	}
+	InitQueue();
+	EnQueue(u);
+	dist[u] =0;
+	while(!IsEmpty()){
+		fath =DeQueue();
+		for(son=0;son<V;son++){
+			if ((B[fath][son] ==1) && dist[son]==-1){
+				dist[son]=dist[fath]+1;
+				EnQueue(son); 
+			}
+		}
+	}
+}
+
+void PrintMinPath(int u,int v){
+	int i;
+	if(dist[v] == -1 || v > 5756 || u > 5756){
+		printf("Khong co duong di");
+	}
+	else{
+		if(dist[v] == 0){
+			printf("%s",A[u]);
+		}
+		else{
+			printf("%s - ",A[v]);
+			for(i=0;i<V;i++){
+				if(B[v][i] ==1 && dist[i] == dist[v] -1){
+					break;
+				}
+			}
+			PrintMinPath(u,i);
+		}
+	}
+}
+
+
+int main(){
+	char u[6],v[6];
+	int i,j,tmp;
+	rfile();
+	taocanhG();
+	DFS();
+	printf("A.a, So thanh phan lien thong la: %d\n\n***********************\n\n",dem);
+	printf("Nhap tu u: ");scanf("%s",v);
+	printf("Nhap tu v: ");scanf("%s",u);
+	for(i=0;i<V;i++){
+		if(strcmp(A[i],u)==0){
+			break;
+		}
+	}
+	for(j=0;j<V;j++){
+		if(strcmp(A[j],v)==0){
+			break;
+		}
+	}
+	printf("\nA.b, Duong di ngan nhat tu u toi v la:\n");
+	BFS(i);
+	PrintMinPath(i,j);
+	getch();
+}
