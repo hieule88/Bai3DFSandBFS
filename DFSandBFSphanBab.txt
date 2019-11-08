@@ -1,0 +1,268 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<conio.h>
+#include<string.h>
+/*
+	y tuong cua bai toan la tim thanh phan lien thong 
+	manh hut bang canh tim thanh phan lien thong manh nguon
+	cua do thi voi cac canh nguoc voi do thi ban dau
+	Sau do quet DFS tu 1 dinh cua TPLTM hut thi ta duoc TPLTM do.
+	Xoa TPLTM hut vua tim duoc, ghi lai vao mang ltm[] 
+*/
+	
+char A[5758][6];
+int **D,**Dt,**Dc,V,Vc;
+int *pre,*check,*post,cl,**ltm,*del,dem =0,demdinh=0;
+
+// tao dinh
+void rfile(){
+	// them ky tu "." vao cuoi file txt de dang xu ly file
+	char *ef=".";
+	int i=0;
+	FILE *fp;
+	fp = fopen("sgb-words.txt","r");
+	do{
+		fscanf(fp, "%s", A[i]);
+		i++;
+	}while(strcmp(A[i-1],ef) != 0 ) ;
+	V= i-1;
+	fclose(fp);
+}
+
+//tao canh D
+void taocanhD(){
+	int i,j,t,giong=0,z,G[4],g,checkD=0;
+	D = (int **)malloc(V*sizeof(int *));
+	for(i=0;i<V;i++){
+		D[i] = (int *)malloc(V*sizeof(int));
+	}
+	for(i=0;i<V;i++){
+		for(j=0;j<V;j++){
+			D[i][j]=0;
+		}
+	}
+	for(g=0;g<4;g++){ // luu cac vi tri da duoc quet cua xau 2
+		G[g] = -1;
+	}
+	for(i=0;i<V;i++){
+		for(j=0;j<V;j++){
+			if(i!=j){
+				for(t=1;t<5;t++){ // ky ty thu t cua xau 1
+					for(z=0;z<5;z++){ // ky tu thu z cua xau 2
+						for(g=0;g<4;g++){// kiem tra vi tri z da duoc quet chua 
+							if(z==G[g]){
+								checkD=1;
+								break;
+							}
+							else{
+								checkD=0;
+							}
+						}					
+						if( (checkD == 0) && ( A[j][z]==A[i][t])){// neu z chua duoc quet 
+							G[giong] = z; // nhet z vao danh sach da quet
+							giong++; // tang so ki tu giong
+							break; // quet luon den z tiep theo
+						}
+					}
+				}
+				if(giong==4){
+					D[i][j]=1;
+				}
+				// reset ve gia tri khoi tao
+				giong=0;
+				for(g=0;g<4;g++){
+					G[g] = -1;
+				}
+			}
+		}
+	}
+}
+// B.a
+void initDt(){ // Dt la do thi nguoc voi do thi D
+	int i,j;
+	Dt = (int **)malloc(V*sizeof(int*));
+	for(i=0;i<V;i++){
+		Dt[i] = (int *)malloc(V*sizeof(int));
+	}
+	for(i=0; i<V;i++){
+		for(j=0; j<V; j++){
+			if(D[i][j] == 1) Dt[j][i] =1;
+		}
+	}
+}
+
+// thuat toan DFS
+void initPrePost(){
+	pre =(int*)malloc(V*sizeof(int));
+	post =(int*)malloc(V*sizeof(int));
+}
+
+void pr(int u){
+	cl+=1;
+	pre[u] = cl;
+}
+
+void pst(int u){
+	cl+=1;
+	post[u] = cl;
+}
+
+void explore(int u, int **G){
+	int i;
+	check[u] =1;
+	ltm[dem][demdinh] = u; // dua goc u vao thanh phan lien thong manh lmt[dem]
+	demdinh++;
+	pr(u);
+	for (i=0; i<V;i++){
+		if(G[u][i]==1 && check[i]==0){
+			explore(i,G);
+		}
+	}
+	pst(u);
+}
+
+int maxPost(){ // tim dinh co so post lon nhat
+	int max =0,i,chiso;
+	for(i=0;i<V;i++){
+		if( max < post[i] && post[i] >=0){
+			max = post[i];
+			chiso = i;
+		}
+	}
+	post[chiso] = -1;
+	return chiso;
+}
+
+int *sortPost(){ // sap xep cac dinh de quet DFS theo thu tu giam dan so post
+	int i,*sort;
+	sort =(int*) malloc(sizeof(int)*V);
+	for(i=0;i<V; i++){
+		sort[i] = maxPost();
+	}
+	return sort;
+}
+
+void DFS(int **G){
+	int i;
+	cl=0;
+	check =(int *)malloc(V*sizeof(int));
+	for(i=0;i<V;i++) check[i] =0;
+	for(i=0;i<V;i++){
+		if (check[i] == 0) explore(i,G);
+	}
+}
+
+void initDc(){ // khoi tao do thi giong do thi D de lam viec khong anh huong toi do thi D goc
+	int i,j;
+	Dc = (int **)malloc(V*sizeof(int*));
+	for(i=0;i<V;i++){
+		Dc[i] = (int *)malloc(V*sizeof(int));
+	}
+	for(i=0; i<V; i++){
+		for(j=0 ; j<V; j++) Dc[i][j] = D[i][j];
+	}
+}
+
+void initListLtm(){
+	int i;
+	ltm = (int **)malloc(V*sizeof(int*));
+	for(i=0;i<V;i++){
+		ltm[i] = (int *)malloc(V*sizeof(int));
+	}
+	del = (int *)malloc(V*sizeof(int));
+	for(i=0;i<V;i++){
+		del[i] = 0;
+	}
+	dem=0;
+	demdinh=0;
+}
+
+void delEdge(int u){ // xoa dinh
+	int i;
+	for(i=0; i<V;i++){
+		if(Dc[u][i] == 1) Dc[u][i] =0;
+	}
+}
+
+void DemLtm(){ // xoa thanh phan lien thong manh hut vua tim duoc
+	int *sort,i,j;
+	sort = (int*)malloc(V*sizeof(int));
+	initDt();
+	initPrePost();
+	initListLtm();
+	DFS(Dt);
+	sort = sortPost();
+	for(i=0;i<V;i++) check[i]=0;
+	initDc();
+	initListLtm();
+	cl=0;
+	for(i=0;i<V;i++){
+		if(check[sort[i]] == 0 ) {
+			explore(sort[i],Dc);
+			for(j=0; j<V;j++){
+				if(check[j] == 1) delEdge(j);
+			}
+			demdinh=0;
+			dem++;
+		}		
+	}
+}
+
+// B.b
+// thu tuc xu ly xau U dua vao trong phan B.b
+int findU(char *u){ 
+	int i;
+	for(i=0; i<V;i++){
+		if (strcmp(u,A[i]) == 0) return i;
+	}
+}
+int findLTM(int u){
+	int i,j;
+	for(i=0; i<dem; i++){
+		for(j=0;j< V; j++){
+			if(ltm[i][j] == u) return i;
+		}
+	}
+}
+void print(int i){
+	int j=0;
+	while(ltm[i][j] != 0){
+		printf("%s ;",A[ltm[i][j]]);
+		j++;
+	}
+}
+
+int main(){
+	int i,j,*sort;
+	char u[6];
+	printf("Do code trong thoi gian han che do on thi nen khong duoc toi uu, thay doi xiu.. ");
+	rfile();
+	taocanhD();
+	
+// B.a	dem so thanh phan lien thong manh
+	DemLtm();
+	printf("So thanh phan lien thong manh la: %d\n",dem);
+	
+// B.b nhap u, ghi ra ca tu cung TPLTM
+	printf("Nhap tu u: ");scanf("%s",u);
+	printf("Cac tu cung thanh phan lien thong manh voi u la: \n");
+	print(findLTM(findU(u)));
+	
+// free memories
+	for(i=0; i<V;i++){
+		free(Dc[i]);
+		free(Dt[i]);
+		free(ltm[i]);
+		free(D[i]);
+	}
+	free(Dc);
+	free(Dt);
+	free(check);
+	free(pre);
+	free(post);
+	free(ltm);
+	free(del);
+	free(D);
+	getch();
+}
