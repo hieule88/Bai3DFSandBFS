@@ -1,0 +1,180 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<conio.h>
+#include<string.h>
+
+char A[5758][6];
+int **D,V;
+int f,r,N,Q[5759],dist[5757];
+
+// tao dinh
+void rfile(){
+	// them ky tu "." vao cuoi file txt de dang xu ly file
+	char *ef=".";
+	int i=0;
+	FILE *fp;
+	fp = fopen("sgb-words.txt","r");
+	do{
+		fscanf(fp, "%s", A[i]);
+		i++;
+	}while(strcmp(A[i-1],ef) != 0 ) ;
+	V= i-1;
+	fclose(fp);
+}
+
+//tao canh D
+void taocanhD(){
+	int i,j,t,giong=0,z,G[4],g,checkD=0;
+	D = (int **)malloc(V*sizeof(int *));
+	for(i=0;i<V;i++){
+		D[i] = (int *)malloc(V*sizeof(int));
+	}
+	for(i=0;i<V;i++){
+		for(j=0;j<V;j++){
+			D[i][j]=0;
+		}
+	}
+	for(g=0;g<4;g++){ // luu cac vi tri da duoc quet cua xau 2
+		G[g] = -1;
+	}
+	for(i=0;i<V;i++){
+		for(j=0;j<V;j++){
+			if(i!=j){
+				for(t=1;t<5;t++){ // ky ty thu t cua xau 1
+					for(z=0;z<5;z++){ // ky tu thu z cua xau 2
+						for(g=0;g<4;g++){// kiem tra vi tri z da duoc quet chua 
+							if(z==G[g]){
+								checkD=1;
+								break;
+							}
+							else{
+								checkD=0;
+							}
+						}					
+						if( (checkD == 0) && ( A[j][z]==A[i][t])){// neu z chua duoc quet 
+							G[giong] = z; // nhet z vao danh sach da quet
+							giong++; // tang so ki tu giong
+							break; // quet luon den z tiep theo
+						}
+					}
+				}
+				if(giong==4){
+					D[i][j]=1;
+				}
+				// reset ve gia tri khoi tao
+				giong=0;
+				for(g=0;g<4;g++){
+					G[g] = -1;
+				}
+			}
+		}
+	}
+}
+// B.c
+void InitQueue(){
+	f=0;
+	r=0;
+	N=5759;
+}
+
+int QIsEmpty(){
+	return f==r;
+}
+
+int getsize(){
+	return(N-(f-r))%N;
+}
+
+void EnQueue(int i){
+	if(getsize() == N-1){
+		printf("Overflow");
+	}
+	else{
+		Q[r]=i;
+		r = (r+1)%N;
+	}
+}
+
+int DeQueue(){
+	int i;
+	if(getsize()==0){
+		return;
+	}
+	else{
+		i = Q[f];
+		f=(f+1)%N;
+		return i;
+	}
+}
+
+void BFS(int u){
+	int i,fath,son;
+	for(i=0;i<V;i++){
+		dist[i] = -1 ;
+	}
+	InitQueue();
+	EnQueue(u);
+	dist[u] =0;
+	while(!QIsEmpty()){
+		fath =DeQueue();
+		for(son=0;son<V;son++){
+			if ((D[fath][son] ==1) && dist[son]==-1){
+				dist[son]=dist[fath]+1;
+				EnQueue(son); 
+			}
+		}
+	}
+}
+
+void PrintMinPath(int u,int v){
+	int i;
+	if(dist[v] == -1 || v > 5756 || u > 5756){
+		printf("Khong co duong di");
+	}
+	else{
+		if(dist[v] == 0){
+			printf("%s",A[u]);
+		}
+		else{
+			printf("%s <- ",A[v]);
+			for(i=0;i<V;i++){
+				if(D[i][v] ==1 && dist[i] == dist[v] -1){
+					break;
+				}
+			}
+			PrintMinPath(u,i);
+		}
+	}
+}
+
+
+int main(){
+	char u[6],v[6];
+	int i,j,*sort;
+	rfile();
+	taocanhD();
+// B.c	
+	printf("Nhap tu u: ");scanf("%s",u);
+	printf("Nhap tu v: ");scanf("%s",v);
+	for(i=0;i<V;i++){
+		if(strcmp(A[i],u)==0){
+			break;
+		}
+	}
+	for(j=0;j<V;j++){
+		if(strcmp(A[j],v)==0){
+			break;
+		}
+	}
+	printf("\nB.c, Duong di ngan nhat tu u toi v la:\n");
+	BFS(i);
+	PrintMinPath(i,j);
+	
+	for(i=0;i<V;i++){
+		free(D[i]);
+	}
+	free(D);
+	
+	getch();
+}
